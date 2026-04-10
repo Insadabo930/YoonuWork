@@ -240,51 +240,7 @@ public class UtilisateurService {
     }
 
 
-//  public Map<String,Object> login(String username,String motDePasse){
-//        log.debug("Tentative de connexion {}",username);
-//        Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
-//            .orElseThrow(()->new RuntimeException("Utilisateur introuvable avec : "+username));
-//        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
-//        map.add("grant_type","password");
-//        map.add("client_id", applicationProperties.getClientId());
-//        map.add("client_secret", applicationProperties.getClientSecret());
-//        map.add("username", username);
-//        map.add("password", motDePasse);
-//
-//        Map<String,Object> response = webClient.post()
-//            .uri(applicationProperties.getKcurl())
-//            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-//            .body(BodyInserters.fromFormData(map))
-//            .retrieve()
-//            .onStatus(HttpStatusCode::isError,res->
-//                res.bodyToMono(String.class).map(error->
-//                    new RuntimeException("Compte introuvable sur keycloak ou inacttif !")
-//                )
-//            )
-//            .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
-//            .block();
-//        if(response == null || !response.containsKey("access_token")){
-//            throw new  RuntimeException("Erreur Utilisateur introuvable !");
-//        }
-//
-//        Map<String,Object> result = new HashMap<>();
-//        result.put("access_token",response.get("access_token"));
-//        result.put("refresh_token",response.get("refresh_token"));
-//        result.put("token_type",response.get("token_type"));
-//        result.put("utilisateur",Map.of(
-//            "username",utilisateur.getUsername(),
-//            "prenom",utilisateur.getPrenom(),
-//            "nom",utilisateur.getNom(),
-//            "email", utilisateur.getEmail(),
-//            "ville",utilisateur.getVille(),
-//            "telephone", utilisateur.getTelephone(),
-//            "role", utilisateur.getRole()
-//        ));
-//      log.debug("Connexion réussie pour {}", username);
-//        return result;
- // }
-
-public Map<String, Object> login(String username, String motDePasse) {
+   public Map<String, Object> login(String username, String motDePasse) {
     log.debug("Tentative de connexion {}", username);
 
     Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
