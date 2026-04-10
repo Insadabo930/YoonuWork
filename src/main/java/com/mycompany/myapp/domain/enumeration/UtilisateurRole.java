@@ -2,6 +2,6 @@ package com.mycompany.myapp.domain.enumeration;
 
 public enum UtilisateurRole {
     FORMATEUR,
-   EMPLOYEUR,
+    EMPLOYEUR,
     CHERCHEUR_EMPLOI
 }

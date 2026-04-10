@@ -33,6 +33,7 @@ public class UtilisateurCreationDTO {
     @NotNull
     private UtilisateurRole utilisateurRole;
 
+
     public UtilisateurCreationDTO() {
     }
 
@@ -128,6 +129,7 @@ public class UtilisateurCreationDTO {
     public void setEmail(String email) {
         this.email = email;
     }
+
 
     @Override
     public boolean equals(Object o){

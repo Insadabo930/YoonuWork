@@ -30,18 +30,28 @@ public class CourDTO {
     private CourStatus courStatus;
 
     @NotNull(message = "L'id du chercheurEmploi est obligatoire")
-    private Long chercheurEmploiId;
+    private Long formateurId;
 
 
-
-
-
-    public Long getChercheurEmploiId() {
-        return chercheurEmploiId;
+    public CourDTO() {
     }
 
-    public void setChercheurEmploiId(Long chercheurEmploiId) {
-        this.chercheurEmploiId = chercheurEmploiId;
+    public CourDTO(CourStatus courStatus, String description, Integer duree, Long formateurId, Long id, String titre, String urlVideo) {
+        this.courStatus = courStatus;
+        this.description = description;
+        this.duree = duree;
+        this.formateurId = formateurId;
+        this.id = id;
+        this.titre = titre;
+        this.urlVideo = urlVideo;
+    }
+
+    public Long getFormateurId() {
+        return formateurId;
+    }
+
+    public void setFormateurId(Long formateurId) {
+        this.formateurId = formateurId;
     }
 
     public CourStatus getCourStatus() {

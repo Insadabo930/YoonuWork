@@ -5,6 +5,7 @@ import com.mycompany.myapp.domain.Utilisateur;
 import com.mycompany.myapp.service.UtilisateurService;
 import com.mycompany.myapp.service.dto.LoginDTO;
 import com.mycompany.myapp.service.dto.UtilisateurCreationDTO;
+import com.mycompany.myapp.service.dto.UtilisateurDTO;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +29,11 @@ public class UtilisateurResource {
     }
 
     @PostMapping("/inscription")
-    public ResponseEntity<Utilisateur> inscrire(
-        @Valid @RequestBody UtilisateurCreationDTO dto) {
+    public ResponseEntity<UtilisateurDTO> inscrire(@Valid @RequestBody UtilisateurCreationDTO dto) {
 
         log.info("Requête REST pour créer un utilisateur : {}", dto.getUsername());
 
-        Utilisateur reponse = utilisateurService.creerUtilisateur(dto);
+        UtilisateurDTO reponse = utilisateurService.creerUtilisateur(dto);
 
         URI location = ServletUriComponentsBuilder
             .fromCurrentRequest()
@@ -42,18 +42,17 @@ public class UtilisateurResource {
             .toUri();
 
         log.info("Utilisateur créé avec succès : id={}", reponse.getId());
-
         return ResponseEntity.created(location).body(reponse);
     }
 
-        @GetMapping("/login")
-        public ResponseEntity<Map<String, Object>> login(@RequestBody LoginDTO dto) {
-            Map<String, Object> response = utilisateurService.login(
-                dto.getUsername(),
-                dto.getMotDePasse()
-            );
-            return ResponseEntity.ok(response);
-        }
+    @PostMapping("/login")   // ← POST, pas GET
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginDTO dto) {
+        Map<String, Object> response = utilisateurService.login(
+            dto.getUsername(),
+            dto.getMotDePasse()
+        );
+        return ResponseEntity.ok(response);
     }
+}
 
 

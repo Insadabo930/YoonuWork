@@ -57,7 +57,6 @@ public class Utilisateur implements Serializable {
     private String ville;
 
     @Column(name = "keycloak_id", unique = true)
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String keycloakId;
 
     @NotNull

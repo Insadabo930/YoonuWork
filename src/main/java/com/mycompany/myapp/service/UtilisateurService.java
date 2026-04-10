@@ -4,6 +4,8 @@ import com.mycompany.myapp.config.ApplicationProperties;
 import com.mycompany.myapp.domain.Utilisateur;
 import com.mycompany.myapp.repository.UtilisateurRepository;
 import com.mycompany.myapp.service.dto.UtilisateurCreationDTO;
+import com.mycompany.myapp.service.dto.UtilisateurDTO;
+import com.mycompany.myapp.service.mapper.UtilisateurMapper;
 import com.mycompany.myapp.web.rest.errors.BadRequestAlertException;
 import com.mycompany.myapp.web.rest.errors.KeycloakException;
 import com.mycompany.myapp.web.rest.errors.KeycloakRollbackException;
@@ -34,13 +36,14 @@ public class UtilisateurService {
     private final UtilisateurRepository utilisateurRepository;
     private final WebClient webClient;              // ← corrigé
     private final ApplicationProperties applicationProperties;
+    private final UtilisateurMapper utilisateurMapper;
 
-    public UtilisateurService(ApplicationProperties applicationProperties, UtilisateurRepository utilisateurRepository, WebClient webClient) {
+    public UtilisateurService(ApplicationProperties applicationProperties, UtilisateurRepository utilisateurRepository, WebClient webClient, UtilisateurMapper utilisateurMapper) {
         this.applicationProperties = applicationProperties;
         this.utilisateurRepository = utilisateurRepository;
         this.webClient = webClient;
+        this.utilisateurMapper = utilisateurMapper;
     }
-
 
     // Todo: la method qui permet de generer le token admin
     private String authentification() {
@@ -71,7 +74,7 @@ public class UtilisateurService {
         throw new KeycloakException("Erreur lors de l'authentification sur keycloak !");
     }
     // Todo: creer un utilisateur avec l'api de keycloak
-    public Utilisateur creerUtilisateur(UtilisateurCreationDTO dto) {
+    public UtilisateurDTO creerUtilisateur(UtilisateurCreationDTO dto) {
 
         // 1. Validation mot de passe
         if (dto.getMotDePasse() == null || dto.getMotDePasse().isBlank()) {
@@ -107,8 +110,8 @@ public class UtilisateurService {
             utilisateur.setVille(dto.getVille());
             utilisateur.setKeycloakId(keycloakUserId);
 
-            return utilisateurRepository.save(utilisateur);
-
+            Utilisateur saved = utilisateurRepository.save(utilisateur);
+            return utilisateurMapper.toDto(saved);
         } catch (Exception e) {
             log.error("Échec BDD → rollback Keycloak pour : {}", keycloakUserId);
 
@@ -237,49 +240,95 @@ public class UtilisateurService {
     }
 
 
-  public Map<String,Object> login(String username,String motDePasse){
-        log.debug("Tentative de connexion {}",username);
-        Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
-            .orElseThrow(()->new RuntimeException("Utilisateur introuvable avec : "+username));
-        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
-        map.add("grant_type","password");
-        map.add("client_id", applicationProperties.getClientId());
-        map.add("client_secret", applicationProperties.getClientSecret());
-        map.add("username", username);
-        map.add("password", motDePasse);
+//  public Map<String,Object> login(String username,String motDePasse){
+//        log.debug("Tentative de connexion {}",username);
+//        Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
+//            .orElseThrow(()->new RuntimeException("Utilisateur introuvable avec : "+username));
+//        MultiValueMap<String,String> map = new LinkedMultiValueMap<>();
+//        map.add("grant_type","password");
+//        map.add("client_id", applicationProperties.getClientId());
+//        map.add("client_secret", applicationProperties.getClientSecret());
+//        map.add("username", username);
+//        map.add("password", motDePasse);
+//
+//        Map<String,Object> response = webClient.post()
+//            .uri(applicationProperties.getKcurl())
+//            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+//            .body(BodyInserters.fromFormData(map))
+//            .retrieve()
+//            .onStatus(HttpStatusCode::isError,res->
+//                res.bodyToMono(String.class).map(error->
+//                    new RuntimeException("Compte introuvable sur keycloak ou inacttif !")
+//                )
+//            )
+//            .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
+//            .block();
+//        if(response == null || !response.containsKey("access_token")){
+//            throw new  RuntimeException("Erreur Utilisateur introuvable !");
+//        }
+//
+//        Map<String,Object> result = new HashMap<>();
+//        result.put("access_token",response.get("access_token"));
+//        result.put("refresh_token",response.get("refresh_token"));
+//        result.put("token_type",response.get("token_type"));
+//        result.put("utilisateur",Map.of(
+//            "username",utilisateur.getUsername(),
+//            "prenom",utilisateur.getPrenom(),
+//            "nom",utilisateur.getNom(),
+//            "email", utilisateur.getEmail(),
+//            "ville",utilisateur.getVille(),
+//            "telephone", utilisateur.getTelephone(),
+//            "role", utilisateur.getRole()
+//        ));
+//      log.debug("Connexion réussie pour {}", username);
+//        return result;
+ // }
 
-        Map<String,Object> response = webClient.post()
-            .uri(applicationProperties.getKcurl())
-            .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-            .body(BodyInserters.fromFormData(map))
-            .retrieve()
-            .onStatus(HttpStatusCode::isError,res->
-                res.bodyToMono(String.class).map(error->
-                    new RuntimeException("Compte introuvable sur keycloak ou inacttif !")
-                )
+public Map<String, Object> login(String username, String motDePasse) {
+    log.debug("Tentative de connexion {}", username);
+
+    Utilisateur utilisateur = utilisateurRepository.findByUsername(username)
+        .orElseThrow(() -> new RuntimeException("Utilisateur introuvable avec : " + username));
+
+    // ← NOUVEAU : Convertir en DTO
+    UtilisateurDTO utilisateurDTO = utilisateurMapper.toDto(utilisateur);
+
+    MultiValueMap<String, String> map = new LinkedMultiValueMap<>();
+    map.add("grant_type", "password");
+    map.add("client_id", applicationProperties.getClientId());
+    map.add("client_secret", applicationProperties.getClientSecret());
+    map.add("username", username);
+    map.add("password", motDePasse);
+
+    Map<String, Object> response = webClient.post()
+        .uri(applicationProperties.getKcurl())
+        .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+        .body(BodyInserters.fromFormData(map))
+        .retrieve()
+        .onStatus(HttpStatusCode::isError, res ->
+            res.bodyToMono(String.class).map(error ->
+                new RuntimeException("Compte introuvable sur keycloak ou inactif !")
             )
-            .bodyToMono(new ParameterizedTypeReference<Map<String,Object>>() {})
-            .block();
-        if(response == null || !response.containsKey("access_token")){
-            throw new  RuntimeException("Erreur Utilisateur introuvable !");
-        }
+        )
+        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+        .block();
 
-        Map<String,Object> result = new HashMap<>();
-        result.put("access_token",response.get("access_token"));
-        result.put("refresh_token",response.get("refresh_token"));
-        result.put("token_type",response.get("token_type"));
-        result.put("utilisateur",Map.of(
-            "username",utilisateur.getUsername(),
-            "prenom",utilisateur.getPrenom(),
-            "nom",utilisateur.getNom(),
-            "email", utilisateur.getEmail(),
-            "ville",utilisateur.getVille(),
-            "telephone", utilisateur.getTelephone(),
-            "role", utilisateur.getRole()
-        ));
-      log.debug("Connexion réussie pour {}", username);
-        return result;
-  }
+    if (response == null || !response.containsKey("access_token")) {
+        throw new RuntimeException("Erreur Utilisateur introuvable !");
+    }
 
+    Map<String, Object> result = new HashMap<>();
+    result.put("access_token", response.get("access_token"));
+    result.put("refresh_token", response.get("refresh_token"));
+    result.put("token_type", response.get("token_type"));
 
+    // ← MODIFIÉ : Utiliser le DTO au lieu du Map
+    result.put("utilisateur", utilisateurDTO);
+
+    log.debug("Connexion réussie pour {}", username);
+    return result;
 }
+}
+
+
+
