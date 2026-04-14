@@ -15,10 +15,6 @@ public interface UtilisateurMapper {
 
     List<UtilisateurDTO> toDto(List<Utilisateur> entities);
 
-    @Mapping(target = "motDePasse", ignore = true)
-    @Mapping(target = "confirmeMotDePasse", ignore = true)
-    @Mapping(target = "utilisateurRole", source = "role")
-    UtilisateurCreationDTO toCreationDto(Utilisateur entity);
 
     @Mapping(target = "role", source = "utilisateurRole")
     @Mapping(target = "keycloakId", ignore = true)

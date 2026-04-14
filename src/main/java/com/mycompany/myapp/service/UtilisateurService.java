@@ -34,7 +34,7 @@ public class UtilisateurService {
 
 
     private final UtilisateurRepository utilisateurRepository;
-    private final WebClient webClient;              // ← corrigé
+    private final WebClient webClient;
     private final ApplicationProperties applicationProperties;
     private final UtilisateurMapper utilisateurMapper;
 
@@ -51,7 +51,7 @@ public class UtilisateurService {
         map.add("grant_type", "password");
         map.add("client_id", applicationProperties.getClientId());
         map.add("client_secret", applicationProperties.getClientSecret());
-        map.add("username", applicationProperties.getUserName());  // ← "admin"
+        map.add("username", applicationProperties.getUserName());
         map.add("password", applicationProperties.getPassword());
 
         Map<String, Object> response = webClient.post()
@@ -73,7 +73,9 @@ public class UtilisateurService {
         }
         throw new KeycloakException("Erreur lors de l'authentification sur keycloak !");
     }
+
     // Todo: creer un utilisateur avec l'api de keycloak
+
     public UtilisateurDTO creerUtilisateur(UtilisateurCreationDTO dto) {
 
         // 1. Validation mot de passe
@@ -86,7 +88,7 @@ public class UtilisateurService {
             throw new BadRequestAlertException("Les mots de passe ne correspondent pas","utilisateur","passwordInvalid");
         }
 
-        // 2. Vérification doublons en BDD locale
+        // 3. Vérification doublons en BDD locale
         if (utilisateurRepository.existsByUsername(dto.getUsername())) {
             throw new BadRequestAlertException("Un utilisateur avec ce username existe dejà !","utilisateur","usernameInvalid");
         }
@@ -94,24 +96,18 @@ public class UtilisateurService {
             throw new BadRequestAlertException("Un utilisateur avec ce numéro existe dejà !","utilisateur","telephoneAlreadyExist");
         }
 
-        // 3. Provisionnement Keycloak
+        // 4. Provisionnement Keycloak
         String token = authentification();
         String keycloakUserId = provisionnerKeycloak(dto, token);
 
-        // 4. Sauvegarde BDD avec rollback si échec
+        // 5. Sauvegarde BDD avec rollback si échec
         try {
-            Utilisateur utilisateur = new Utilisateur();
-            utilisateur.setUsername(dto.getUsername());
-            utilisateur.setPrenom(dto.getPrenom());
-            utilisateur.setNom(dto.getNom());
-            utilisateur.setTelephone(dto.getTelephone());
-            utilisateur.setEmail(dto.getEmail());
-            utilisateur.setRole(dto.getUtilisateurRole());
-            utilisateur.setVille(dto.getVille());
+            Utilisateur utilisateur = utilisateurMapper.toEntity(dto);
             utilisateur.setKeycloakId(keycloakUserId);
 
-            Utilisateur saved = utilisateurRepository.save(utilisateur);
-            return utilisateurMapper.toDto(saved);
+            Utilisateur saved = utilisateurRepository.save(utilisateur); // ← sauvegarder
+            return utilisateurMapper.toDto(saved);                       // ← convertir et retourner
+
         } catch (Exception e) {
             log.error("Échec BDD → rollback Keycloak pour : {}", keycloakUserId);
 
@@ -130,8 +126,6 @@ public class UtilisateurService {
             log.info("Rollback effectué — keycloakId='{}' supprimé", keycloakUserId);
             throw new RuntimeException("Échec création en BDD — rollback Keycloak effectué", e);
         }
-
-
     }
 
     private String provisionnerKeycloak(UtilisateurCreationDTO dto, String token) {
@@ -155,6 +149,7 @@ public class UtilisateurService {
             throw new RuntimeException("Utilisateur déjà existant dans Keycloak : " + dto.getUsername());
         }
 
+
         // --- Construction du payload ---
         Map<String, Object> userRepresentation = new HashMap<>();
         userRepresentation.put("username", dto.getUsername());
@@ -175,7 +170,6 @@ public class UtilisateurService {
         credential.put("temporary", false);
         userRepresentation.put("credentials", List.of(credential));
 
-
         //  --- Création dans Keycloak ---
         ResponseEntity<Void> response = webClient.post()
             .uri(baseUrl + "/users")
@@ -185,7 +179,7 @@ public class UtilisateurService {
             .retrieve()
             .onStatus(HttpStatusCode::isError, res ->
                 res.bodyToMono(String.class).map(error ->
-                    new RuntimeException("Erreur création Keycloak : " + error)
+                    new KeycloakException("Erreur création Keycloak : " + error)
                 )
             )
             .toBodilessEntity()
@@ -198,6 +192,8 @@ public class UtilisateurService {
 
         String keycloakUserId = location.substring(location.lastIndexOf("/") + 1);
         log.info("Utilisateur créé dans Keycloak — keycloakId='{}'", keycloakUserId);
+
+
 
 
         // --- Récupération du rôle ---
@@ -219,7 +215,6 @@ public class UtilisateurService {
         if (role == null) {
             throw new RuntimeException("Représentation du rôle null pour : " + roleName);
         }
-
         // --- Assignation du rôle ---
         webClient.post()
             .uri(baseUrl + "/users/" + keycloakUserId + "/role-mappings/realm")

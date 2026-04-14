@@ -21,10 +21,8 @@ public class UtilisateurCreationDTO {
     @Email
     private String email;
     @NotBlank
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String motDePasse;
     @NotBlank
-    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String confirmeMotDePasse;
     @NotBlank
     private String telephone;

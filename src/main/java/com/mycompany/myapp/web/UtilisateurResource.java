@@ -1,7 +1,7 @@
 package com.mycompany.myapp.web;
 
 
-import com.mycompany.myapp.domain.Utilisateur;
+
 import com.mycompany.myapp.service.UtilisateurService;
 import com.mycompany.myapp.service.dto.LoginDTO;
 import com.mycompany.myapp.service.dto.UtilisateurCreationDTO;
@@ -27,12 +27,8 @@ public class UtilisateurResource {
     public UtilisateurResource(UtilisateurService utilisateurService) {
         this.utilisateurService = utilisateurService;
     }
-
     @PostMapping("/inscription")
     public ResponseEntity<UtilisateurDTO> inscrire(@Valid @RequestBody UtilisateurCreationDTO dto) {
-
-        log.info("Requête REST pour créer un utilisateur : {}", dto.getUsername());
-
         UtilisateurDTO reponse = utilisateurService.creerUtilisateur(dto);
 
         URI location = ServletUriComponentsBuilder
@@ -41,7 +37,6 @@ public class UtilisateurResource {
             .buildAndExpand(reponse.getId())
             .toUri();
 
-        log.info("Utilisateur créé avec succès : id={}", reponse.getId());
         return ResponseEntity.created(location).body(reponse);
     }
 
