@@ -27,7 +27,7 @@ public class Cour implements Serializable {
         private String urlVideo;
 
         @Column(nullable = false)
-        private Integer duree; // en secondes
+        private Integer duree;
 
         @Enumerated(EnumType.STRING)
         @Column(nullable = false)

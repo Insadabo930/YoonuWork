@@ -144,5 +144,63 @@
       <column name="telephone"/>
     </createIndex>
   </changeSet>
+  <changeSet id="cour-1-sequence" author="insa">
+    <createSequence sequenceName="cour_sequence"
+                    startValue="1"
+                    incrementBy="50"/>
+  </changeSet>
+
+  <!-- ===================== -->
+  <!-- 2. TABLE COURS -->
+  <!-- ===================== -->
+  <changeSet id="cour-2-table" author="insa">
+
+    <createTable tableName="cours">
+
+      <column name="id" type="bigint">
+        <constraints primaryKey="true" nullable="false"/>
+      </column>
+
+      <column name="titre" type="varchar(150)">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="description" type="text">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="url_video" type="varchar(255)">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="duree" type="integer">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="cour_status" type="varchar(50)">
+        <constraints nullable="false"/>
+      </column>
+
+      <column name="created_at" type="timestamp"/>
+      <column name="updated_at" type="timestamp"/>
+
+      <column name="formateur_id" type="bigint">
+        <constraints nullable="false"/>
+      </column>
+
+    </createTable>
+
+  </changeSet>
+
+  <!-- ===================== -->
+  <!-- 3. INDEX -->
+  <!-- ===================== -->
+  <changeSet id="cour-3-index" author="insa">
+
+    <createIndex tableName="cours" indexName="idx_cours_formateur">
+      <column name="formateur_id"/>
+    </createIndex>
+
+  </changeSet>
 
 </databaseChangeLog>

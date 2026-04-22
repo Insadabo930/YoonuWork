@@ -17,20 +17,12 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
-/**
- * Utility class for Spring Security.
- */
 public final class SecurityUtils {
 
     public static final String CLAIMS_NAMESPACE = "https://www.jhipster.tech/";
 
     private SecurityUtils() {}
 
-    /**
-     * Get the login of the current user.
-     *
-     * @return the login of the current user.
-     */
     public static Optional<String> getCurrentUserLogin() {
         SecurityContext securityContext = SecurityContextHolder.getContext();
         return Optional.ofNullable(extractPrincipal(securityContext.getAuthentication()));
@@ -54,22 +46,11 @@ public final class SecurityUtils {
         return null;
     }
 
-    /**
-     * Check if a user is authenticated.
-     *
-     * @return true if the user is authenticated, false otherwise.
-     */
     public static boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return authentication != null && getAuthorities(authentication).noneMatch(AuthoritiesConstants.ANONYMOUS::equals);
     }
 
-    /**
-     * Checks if the current user has any of the authorities.
-     *
-     * @param authorities the authorities to check.
-     * @return true if the current user has any of the authorities, false otherwise.
-     */
     public static boolean hasCurrentUserAnyOfAuthorities(String... authorities) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         return (
@@ -77,22 +58,10 @@ public final class SecurityUtils {
         );
     }
 
-    /**
-     * Checks if the current user has none of the authorities.
-     *
-     * @param authorities the authorities to check.
-     * @return true if the current user has none of the authorities, false otherwise.
-     */
     public static boolean hasCurrentUserNoneOfAuthorities(String... authorities) {
         return !hasCurrentUserAnyOfAuthorities(authorities);
     }
 
-    /**
-     * Checks if the current user has a specific authority.
-     *
-     * @param authority the authority to check.
-     * @return true if the current user has the authority, false otherwise.
-     */
     public static boolean hasCurrentUserThisAuthority(String authority) {
         return hasCurrentUserAnyOfAuthorities(authority);
     }
@@ -105,18 +74,42 @@ public final class SecurityUtils {
     }
 
     public static List<GrantedAuthority> extractAuthorityFromClaims(Map<String, Object> claims) {
-        return mapRolesToGrantedAuthorities(getRolesFromClaims(claims));
+        System.out.println("=== CLAIMS REÇUS : " + claims.keySet());
+
+        Collection<String> roles = getRolesFromClaims(claims);
+        System.out.println("=== ROLES EXTRAITS : " + roles);
+
+        List<GrantedAuthority> authorities = mapRolesToGrantedAuthorities(roles);
+        System.out.println("=== AUTHORITIES FINALES : " + authorities);
+
+        return authorities;
     }
 
     @SuppressWarnings("unchecked")
     private static Collection<String> getRolesFromClaims(Map<String, Object> claims) {
+
+        // ✅ CORRECTION — Lire realm_access.roles depuis Keycloak
+        if (claims.containsKey("realm_access")) {
+            Map<String, Object> realmAccess = (Map<String, Object>) claims.get("realm_access");
+            if (realmAccess != null && realmAccess.containsKey("roles")) {
+                return (Collection<String>) realmAccess.get("roles");
+            }
+        }
+
+        // Fallback sur les autres formats
         return (Collection<String>) claims.getOrDefault(
             "groups",
-            claims.getOrDefault("roles", claims.getOrDefault(CLAIMS_NAMESPACE + "roles", new ArrayList<>()))
+            claims.getOrDefault("roles",
+                claims.getOrDefault(CLAIMS_NAMESPACE + "roles", new ArrayList<>())
+            )
         );
     }
 
     private static List<GrantedAuthority> mapRolesToGrantedAuthorities(Collection<String> roles) {
-        return roles.stream().filter(role -> role.startsWith("ROLE_")).map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+        // ✅ CORRECTION — Ajouter ROLE_ si pas déjà présent
+        return roles.stream()
+            .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+            .map(SimpleGrantedAuthority::new)
+            .collect(Collectors.toList());
     }
 }

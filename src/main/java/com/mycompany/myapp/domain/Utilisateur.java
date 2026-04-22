@@ -2,6 +2,7 @@ package com.mycompany.myapp.domain;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.mycompany.myapp.domain.enumeration.ObjectifUtilisateur;
 import com.mycompany.myapp.domain.enumeration.UtilisateurRole;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
@@ -66,6 +67,12 @@ public class Utilisateur implements Serializable {
     @OneToMany(mappedBy = "formateur", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnoreProperties(value = {"formateur"},allowSetters = true)
     private List<Cour> cours = new ArrayList<>();
+    @OneToMany(mappedBy = "employeur",cascade = CascadeType.ALL,orphanRemoval = true)
+    @JsonIgnoreProperties(value = {"employeur"}, allowSetters = true)
+    private List<Publication> publications = new ArrayList<>();
+    @Enumerated(EnumType.STRING)
+    @Column(name = "objectif")
+    private ObjectifUtilisateur objectif;
 
     // ───────────── Getters / Setters ─────────────
 
@@ -98,6 +105,22 @@ public class Utilisateur implements Serializable {
 
     public List<Cour> getCours() { return cours; }
     public void setCours(List<Cour> cours) { this.cours = cours; }
+
+    public List<Publication> getPublications() {
+        return publications;
+    }
+
+    public void setPublications(List<Publication> publications) {
+        this.publications = publications;
+    }
+
+    public ObjectifUtilisateur getObjectif() {
+        return objectif;
+    }
+
+    public void setObjectif(ObjectifUtilisateur objectif) {
+        this.objectif = objectif;
+    }
 
     // ───────────── Méthodes helper relation ─────────────
 

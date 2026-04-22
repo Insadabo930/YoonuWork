@@ -1,7 +1,6 @@
 package com.mycompany.myapp.service.dto;
 
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.mycompany.myapp.domain.enumeration.UtilisateurRole;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
