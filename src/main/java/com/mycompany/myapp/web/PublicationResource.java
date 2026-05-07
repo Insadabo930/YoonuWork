@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/publications")
 public class PublicationResource {
@@ -23,7 +25,7 @@ public class PublicationResource {
         this.publicationService = publicationService;
     }
 
-    // ===== POST — création =====
+
     @PostMapping
     @PreAuthorize("hasRole('EMPLOYEUR')")
     public ResponseEntity<PublicationDTO> creerPublication(@RequestBody PublicationCreationDTO dto) {
@@ -32,7 +34,7 @@ public class PublicationResource {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
-    // ===== PUT — remplacement complet =====
+
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('EMPLOYEUR')")
     public ResponseEntity<PublicationDTO> updatePublication(
@@ -43,7 +45,7 @@ public class PublicationResource {
         return ResponseEntity.ok(result);
     }
 
-    // ===== PATCH — mise à jour partielle =====
+
     @PatchMapping("/{id}")
     @PreAuthorize("hasRole('EMPLOYEUR')")
     public ResponseEntity<PublicationDTO> partialUpdatePublication(
@@ -54,7 +56,20 @@ public class PublicationResource {
         return ResponseEntity.ok(result);
     }
 
-    // ===== DELETE =====
+    @GetMapping
+    public ResponseEntity<List<PublicationDTO>> getAllPublications() {
+        log.debug("REST request to get all Publications");
+        return ResponseEntity.ok(publicationService.getAll());
+    }
+
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PublicationDTO> getPublication(@PathVariable Long id) {
+        log.debug("REST request to get Publication : {}", id);
+        return ResponseEntity.ok(publicationService.getById(id));
+    }
+
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('EMPLOYEUR')")
     public ResponseEntity<Void> deletePublication(@PathVariable Long id) {

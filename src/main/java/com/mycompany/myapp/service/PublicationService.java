@@ -48,7 +48,7 @@ public class PublicationService {
             ));
     }
 
-    // ===== MÉTHODE EXTRAITE — récupère la publication et vérifie la propriété =====
+
     private Publication getPublicationAvecVerification(Long id, Utilisateur authentifie) {
         Publication publication = publicationRepository.findById(id)
             .orElseThrow(() -> new BadRequestAlertException(
