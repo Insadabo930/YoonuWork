@@ -138,7 +138,7 @@ public class UtilisateurService {
             .retrieve()
             .onStatus(HttpStatusCode::isError, res ->
                 res.bodyToMono(String.class).map(error ->
-                    new RuntimeException("Erreur vérification Keycloak : " + error)
+                    new KeycloakException("Erreur vérification Keycloak : " + error)
                 )
             )
             .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {
@@ -172,7 +172,7 @@ public class UtilisateurService {
 
         //  --- Création dans Keycloak ---
         ResponseEntity<Void> response = webClient.post()
-            .uri(baseUrl + "/users")
+            .uri(applicationProperties.getCreateUser())
             .header("Authorization", "Bearer " + token)
             .contentType(MediaType.APPLICATION_JSON)
             .bodyValue(userRepresentation)

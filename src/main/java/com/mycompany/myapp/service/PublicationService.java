@@ -1,10 +1,7 @@
 package com.mycompany.myapp.service;
 
-
 import com.mycompany.myapp.domain.Publication;
 import com.mycompany.myapp.domain.Utilisateur;
-import com.mycompany.myapp.domain.enumeration.ObjectifUtilisateur;
-import com.mycompany.myapp.domain.enumeration.TypePublication;
 import com.mycompany.myapp.domain.enumeration.UtilisateurRole;
 import com.mycompany.myapp.repository.PublicationRepository;
 import com.mycompany.myapp.repository.UtilisateurRepository;
@@ -20,6 +17,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 
 @Service
 @Transactional
@@ -30,8 +28,9 @@ public class PublicationService {
     private final PublicationMapper publicationMapper;
     private final UtilisateurRepository utilisateurRepository;
 
-
-    public PublicationService(PublicationMapper publicationMapper, PublicationRepository publicationRepository, UtilisateurRepository utilisateurRepository) {
+    public PublicationService(PublicationMapper publicationMapper,
+                              PublicationRepository publicationRepository,
+                              UtilisateurRepository utilisateurRepository) {
         this.publicationMapper = publicationMapper;
         this.publicationRepository = publicationRepository;
         this.utilisateurRepository = utilisateurRepository;
@@ -49,8 +48,24 @@ public class PublicationService {
             ));
     }
 
+    // ===== MÉTHODE EXTRAITE — récupère la publication et vérifie la propriété =====
+    private Publication getPublicationAvecVerification(Long id, Utilisateur authentifie) {
+        Publication publication = publicationRepository.findById(id)
+            .orElseThrow(() -> new BadRequestAlertException(
+                "Publication non trouvée avec id : " + id, "publication", "notFound"
+            ));
 
-    // ===== POST — création =====
+        if (!publication.getEmployeur().getId().equals(authentifie.getId())) {
+            throw new BadRequestAlertException(
+                "Vous n'êtes pas autorisé à effectuer cette action sur cette publication",
+                "publication", "forbidden"
+            );
+        }
+
+        return publication;
+    }
+
+
     public PublicationDTO creerPublication(PublicationCreationDTO dto) {
         Utilisateur employeur = getAuthentifie();
         log.debug("Création publication par utilisateur: {}", employeur.getId());
@@ -69,65 +84,47 @@ public class PublicationService {
         return publicationMapper.toDto(saved);
     }
 
-    // ===== PUT — remplacement complet =====
+
     public PublicationDTO update(Long id, PublicationDTO dto) {
         Utilisateur authentifie = getAuthentifie();
-
-        Publication publication = publicationRepository.findById(id)
-            .orElseThrow(() -> new BadRequestAlertException(
-                "Publication non trouvée avec id : " + id, "publication", "notFound"
-            ));
-
-        // Seul l'employeur propriétaire peut modifier
-        if (!publication.getEmployeur().getId().equals(authentifie.getId())) {
-            throw new BadRequestAlertException(
-                "Vous n'êtes pas autorisé à modifier cette publication",
-                "publication", "forbidden"
-            );
-        }
+        Publication publication = getPublicationAvecVerification(id, authentifie);
 
         publicationMapper.updateEntityFromDto(dto, publication);
         return publicationMapper.toDto(publicationRepository.save(publication));
     }
 
-    // ===== PATCH — mise à jour partielle =====
+
     public PublicationDTO partialUpdate(Long id, PublicationDTO dto) {
         Utilisateur authentifie = getAuthentifie();
-
-        Publication publication = publicationRepository.findById(id)
-            .orElseThrow(() -> new BadRequestAlertException(
-                "Publication non trouvée avec id : " + id, "publication", "notFound"
-            ));
-
-        if (!publication.getEmployeur().getId().equals(authentifie.getId())) {
-            throw new BadRequestAlertException(
-                "Vous n'êtes pas autorisé à modifier cette publication",
-                "publication", "forbidden"
-            );
-        }
+        Publication publication = getPublicationAvecVerification(id, authentifie);
 
         publicationMapper.partialUpdateEntityFromDto(dto, publication);
         return publicationMapper.toDto(publicationRepository.save(publication));
     }
 
-    // ===== DELETE =====
-    public void delete(Long id) {
-        Utilisateur authentifie = getAuthentifie();
 
-        Publication publication = publicationRepository.findById(id)
+    public List<PublicationDTO> getAll() {
+        return publicationRepository.findAll()
+            .stream()
+            .map(publicationMapper::toDto)
+            .toList();
+    }
+
+
+    public PublicationDTO getById(Long id) {
+        return publicationRepository.findById(id)
+            .map(publicationMapper::toDto)
             .orElseThrow(() -> new BadRequestAlertException(
                 "Publication non trouvée avec id : " + id, "publication", "notFound"
             ));
-
-        if (!publication.getEmployeur().getId().equals(authentifie.getId())) {
-            throw new BadRequestAlertException(
-                "Vous n'êtes pas autorisé à supprimer cette publication",
-                "publication", "forbidden"
-            );
-        }
-
-        publicationRepository.deleteById(id);
-        log.info("Publication id={} supprimée par utilisateur id={}", id, authentifie.getId());
     }
 
+
+    public void delete(Long id) {
+        Utilisateur authentifie = getAuthentifie();
+        Publication publication = getPublicationAvecVerification(id, authentifie);
+
+        publicationRepository.deleteById(publication.getId());
+        log.info("Publication id={} supprimée par utilisateur id={}", id, authentifie.getId());
+    }
 }
