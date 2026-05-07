@@ -57,6 +57,7 @@ public class PublicationResource {
     }
 
     @GetMapping
+    @PreAuthorize("isAuthenticate()")
     public ResponseEntity<List<PublicationDTO>> getAllPublications() {
         log.debug("REST request to get all Publications");
         return ResponseEntity.ok(publicationService.getAll());
@@ -64,6 +65,7 @@ public class PublicationResource {
 
 
     @GetMapping("/{id}")
+    @PreAuthorize("isAuthenticate")
     public ResponseEntity<PublicationDTO> getPublication(@PathVariable Long id) {
         log.debug("REST request to get Publication : {}", id);
         return ResponseEntity.ok(publicationService.getById(id));
